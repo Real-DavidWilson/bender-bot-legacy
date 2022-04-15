@@ -15,7 +15,7 @@ use serenity::framework::standard::{
     CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
-use serenity::utils::{MessageBuilder, EmbedMessageBuilding};
+use serenity::utils::{EmbedMessageBuilding, MessageBuilder};
 use songbird::SerenityInit;
 
 mod services;
@@ -26,12 +26,34 @@ use services::music::*;
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
-static mut redis_client: Option<redis::Client> = None;
+static mut REDIS_CONN: Option<redis::Connection> = None;
 
 struct Handler;
 
 #[async_trait]
 impl serenity::client::EventHandler for Handler {}
+
+async fn connect_redis() -> redis::RedisResult<()> {
+    let client = redis::Client::open(dotenv!("REDIS_URL"));
+
+    if let Err(msg) = &client {
+        println!("{}", msg);
+        return Ok(());
+    }
+
+    let conn = client?.get_connection();
+
+    if let Err(msg) = &conn {
+        println!("{}", msg);
+        return Ok(());
+    }
+
+    unsafe {
+        REDIS_CONN = Some(conn?);
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
@@ -39,9 +61,7 @@ async fn main() {
         .configure(|c| c.prefix("~"))
         .group(&GENERAL_GROUP);
 
-    unsafe {
-        // redis_client = Some(redis::Client::open("host").unwrap());
-    }
+    connect_redis().await;
 
     let mut client = Client::builder(TOKEN)
         .event_handler(Handler)
