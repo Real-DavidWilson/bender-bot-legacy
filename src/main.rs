@@ -89,7 +89,7 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn author(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(&ctx, "LordShadd")
+    msg.reply(&ctx, "David Wilson - davidwilsonbr2019@gmail.com")
         .await
         .unwrap();
 
