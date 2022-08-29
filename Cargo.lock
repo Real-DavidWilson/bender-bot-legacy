@@ -1425,6 +1425,7 @@ dependencies = [
  "chrono",
  "dotenv",
  "dotenv_codegen",
+ "lazy_static",
  "octocrab",
  "redis",
  "serde_json",

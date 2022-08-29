@@ -1,4 +1,6 @@
+#![allow(unused)]
 #[macro_use]
+
 extern crate dotenv_codegen;
 
 extern crate chrono;
@@ -7,7 +9,6 @@ extern crate redis;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use dotenv::dotenv;
 use serenity::async_trait;
 use serenity::client::{Client, Context};
 use serenity::framework::standard::{
@@ -15,53 +16,28 @@ use serenity::framework::standard::{
     CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
-use serenity::utils::{EmbedMessageBuilding, MessageBuilder};
 use songbird::SerenityInit;
 
-mod services;
-use services::music::*;
+mod music;
+use music::*;
 
 #[group]
 #[commands(ping, play, stop, author)]
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
-static mut REDIS_CONN: Option<redis::Connection> = None;
+// static mut REDIS_CONN: Option<redis::Connection> = None;
 
 struct Handler;
 
 #[async_trait]
 impl serenity::client::EventHandler for Handler {}
 
-async fn connect_redis() -> redis::RedisResult<()> {
-    let client = redis::Client::open(dotenv!("REDIS_URL"));
-
-    if let Err(msg) = &client {
-        println!("{}", msg);
-        return Ok(());
-    }
-
-    let conn = client?.get_connection();
-
-    if let Err(msg) = &conn {
-        println!("{}", msg);
-        return Ok(());
-    }
-
-    unsafe {
-        REDIS_CONN = Some(conn?);
-    }
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~"))
         .group(&GENERAL_GROUP);
-
-    connect_redis().await;
 
     let mut client = Client::builder(TOKEN)
         .event_handler(Handler)
