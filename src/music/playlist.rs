@@ -39,12 +39,12 @@ pub async fn insert(item: PlaylistItem) -> PlaylistResult<()> {
     Ok(())
 }
 
-pub async fn next() -> PlaylistResult<PlaylistItem> {
+pub async fn next() -> Option<PlaylistItem> {
     if is_empty().await {
-        return Err(PlaylistError::PlaylistEmpty);
+        return None;
     }
 
-    Ok(PLAYLIST.lock().await.remove(0))
+    Some(PLAYLIST.lock().await.remove(0))
 }
 
 pub async fn is_empty() -> bool {

@@ -22,7 +22,7 @@ impl<'fut> EventHandler for StopMusicHandle {
     async fn act(&self, _ctx: &songbird::EventContext<'_>) -> Option<songbird::Event> {
         let next_music = playlist::next().await;
 
-        if next_music.is_err() {
+        if next_music.is_none() {
             let mut builder = EditMessage::default();
 
             builder.content("Nenhuma música foi encontrada, saindo...");
@@ -43,7 +43,7 @@ impl<'fut> EventHandler for StopMusicHandle {
             return None
         }
 
-        if next_music.is_ok() {
+        if next_music.is_some() {
             let mut builder = EditMessage::default();
 
             builder.content("Tocando a próxima música...");
