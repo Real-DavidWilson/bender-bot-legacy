@@ -1,6 +1,5 @@
 #![allow(unused)]
 #[macro_use]
-
 extern crate dotenv_codegen;
 
 extern crate chrono;
@@ -16,13 +15,16 @@ use serenity::framework::standard::{
     CommandResult, StandardFramework,
 };
 use serenity::model::channel::Message;
+use serenity::model::prelude::ReactionType;
 use songbird::SerenityInit;
 
+mod chat;
 mod music;
+use chat::*;
 use music::*;
 
 #[group]
-#[commands(ping, play, stop, author)]
+#[commands(ping, play, stop, author, clear)]
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
@@ -31,7 +33,10 @@ const TOKEN: &'static str = dotenv!("TOKEN");
 struct Handler;
 
 #[async_trait]
-impl serenity::client::EventHandler for Handler {}
+impl serenity::client::EventHandler for Handler {
+    async fn message(&self, ctx: Context, new_message: Message) {
+    }
+}
 
 #[tokio::main]
 async fn main() {
