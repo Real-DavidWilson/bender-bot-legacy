@@ -7,8 +7,6 @@ use serenity::{
     utils::MessageBuilder,
 };
 
-pub mod cleaner;
-
 #[command]
 #[only_in(guilds)]
 pub async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
