@@ -111,14 +111,12 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[command]
 #[only_in(guilds)]
 pub async fn skip(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    msg.reply(&ctx.http, "Pulando para a próxima música.").await.unwrap();
-    
     let playing_next = player::skip(&ctx, msg.guild_id.unwrap().0, msg.channel_id.0).await;
     
     if !playing_next {
         msg.reply(&ctx.http, "Não há mais nenhuma música na playlist.").await.unwrap();
     }
-
+    
     Ok(())
 }
 

@@ -174,12 +174,29 @@ pub async fn play_next(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
     let next_music = playlist::next().await;
 
     if next_music.is_none() {
-        manager.leave(guild_id).await.unwrap();
-
         let mut is_playing = IS_PLAYING.lock().await;
         *is_playing = false;
 
-        return false
+        let handler_lock = manager.get(guild_id);
+
+        if handler_lock.is_none() {
+            return false;
+        }
+
+        let mut handler = handler_lock.as_ref().unwrap().lock().await;
+
+        let on_channel = handler.current_channel().is_some();
+        let has_connection = handler.current_connection().is_some();
+
+        if has_connection {
+            handler.stop();
+        }
+
+        if on_channel {
+            handler.leave().await.unwrap();
+        }
+
+        return false;
     }
 
     let item = next_music.unwrap();
@@ -196,7 +213,7 @@ pub async fn play_next(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
 
     send_media_message(&ctx, &item.author, item.channel.id().0, media_info).await;
 
-    return true
+    return true;
 }
 
 pub async fn skip(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {

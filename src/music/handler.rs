@@ -31,14 +31,15 @@ impl<'fut> EventHandler for StopMusicHandle {
             return None;
         }
 
-        let message = self.ctx
+        let message = self
+            .ctx
             .http
             .get_channel(self.channel_id)
             .await
             .unwrap()
             .id()
             .send_message(&self.ctx.http, |m| {
-                m.content("Não há mais nenhuma música na playlist.")
+                m.content("Não há mais nenhuma música na playlist.\n\nRádio do Bender | @here")
             })
             .await
             .unwrap();
