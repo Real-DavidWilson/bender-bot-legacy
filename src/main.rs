@@ -33,9 +33,7 @@ const TOKEN: &'static str = dotenv!("TOKEN");
 struct Handler;
 
 #[async_trait]
-impl serenity::client::EventHandler for Handler {
-    async fn message(&self, ctx: Context, new_message: Message) {}
-}
+impl serenity::client::EventHandler for Handler {}
 
 #[tokio::main]
 async fn main() {
