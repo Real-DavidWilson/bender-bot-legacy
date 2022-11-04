@@ -65,8 +65,6 @@ pub async fn send_media_message(
 #[command]
 #[only_in(guilds)]
 pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    println!("Command executed");
-
     let guild = msg.guild(&ctx.cache).await.unwrap();
     let channel = msg.channel(&ctx.cache).await.unwrap();
 
