@@ -1,6 +1,6 @@
 ## Bender Bot
 
-Este é um bot para o discord escrito em rust.
+Este é um bot gerenciar o seu servidor do discord, contendo uma rádio embutida. 
 
 ### Instruções
 
