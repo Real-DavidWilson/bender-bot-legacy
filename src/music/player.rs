@@ -4,22 +4,23 @@ use lazy_static::lazy_static;
 use serde_json::Value;
 use serenity::{
     async_trait,
-    builder::EditMessage,
+    builder::{CreateMessage, EditMessage},
     futures::lock::Mutex,
     http::CacheHttp,
     model::{
-        prelude::{Channel, Guild, GuildId},
+        prelude::{Channel, Embed, Guild, GuildId},
         user::User,
     },
     prelude::Context,
-    utils::hashmap_to_json_map,
+    utils::{hashmap_to_json_map, CustomMessage, MessageBuilder},
 };
 use songbird::{input::Input, EventHandler, Songbird, TrackEvent};
 
 use super::{
-    handler::StopMusicHandle,
+    handler::{self, StopMusicHandle},
     playlist::{self, PlaylistError},
     query::query_video,
+    send_media_message,
 };
 
 type PlayerResult<T> = Result<T, PlayerError>;
@@ -28,9 +29,9 @@ lazy_static! {
     pub static ref IS_PLAYING: Mutex<bool> = Mutex::new(false);
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum PlayerStatus {
-    Playing,
+    Playing(MediaInfo),
     Queued,
 }
 
@@ -38,6 +39,16 @@ pub enum PlayerStatus {
 pub enum PlayerError {
     UserOffVoiceChannel,
     MusicNotFound,
+}
+
+#[derive(Debug, Clone)]
+pub struct MediaInfo {
+    pub title: String,
+    pub thumb: String,
+    pub artist: String,
+    pub video_duration: Duration,
+    pub url: String,
+    pub duration: String,
 }
 
 fn format_duration(duration: Duration) -> String {
@@ -50,7 +61,7 @@ fn format_duration(duration: Duration) -> String {
     format!("{}", naive_duration.format("%M:%S").to_string())
 }
 
-pub async fn queue(
+pub async fn queue<'a>(
     ctx: Context,
     uri: String,
     guild: Guild,
@@ -80,12 +91,12 @@ pub async fn queue(
         return Ok(PlayerStatus::Queued);
     }
 
-    play(&ctx, source, guild, channel, author).await?;
+    let media_info = play(&ctx, source, guild, channel, author).await?;
 
     let mut is_playing = IS_PLAYING.lock().await;
     *is_playing = true;
 
-    Ok(PlayerStatus::Playing)
+    Ok(PlayerStatus::Playing(media_info))
 }
 
 pub async fn play(
@@ -94,7 +105,7 @@ pub async fn play(
     guild: Guild,
     channel: Channel,
     author: User,
-) -> PlayerResult<()> {
+) -> PlayerResult<MediaInfo> {
     let guild_id = guild.id;
 
     let channel_id = guild
@@ -143,13 +154,53 @@ pub async fn play(
             StopMusicHandle {
                 ctx: ctx.clone(),
                 channel_id: channel_id.unwrap().0,
-                manager: manager.clone(),
-                guild_id,
+                guild_id: guild_id.0,
             },
         )
         .unwrap();
 
-    Ok(())
+    Ok(MediaInfo {
+        title,
+        thumb,
+        artist,
+        video_duration,
+        url,
+        duration,
+    })
+}
+
+pub async fn play_next(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
+    let manager = songbird::get(&ctx).await.unwrap();
+    let next_music = playlist::next().await;
+
+    if next_music.is_none() {
+        manager.leave(guild_id).await.unwrap();
+
+        let mut is_playing = IS_PLAYING.lock().await;
+        *is_playing = false;
+
+        return false
+    }
+
+    let item = next_music.unwrap();
+
+    let media_info = play(
+        &item.ctx,
+        item.source,
+        item.guild,
+        item.channel.clone(),
+        item.author.clone(),
+    )
+    .await
+    .unwrap();
+
+    send_media_message(&ctx, &item.author, item.channel.id().0, media_info).await;
+
+    return true
+}
+
+pub async fn skip(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
+    play_next(&ctx, guild_id, channel_id).await
 }
 
 pub async fn stop() {}

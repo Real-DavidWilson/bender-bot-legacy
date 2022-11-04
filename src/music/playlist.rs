@@ -12,7 +12,7 @@ pub struct PlaylistItem {
     pub guild: Guild,
     pub channel: Channel,
     pub author: User,
-    pub source: Input
+    pub source: Input,
 }
 
 unsafe impl Send for PlaylistItem {}

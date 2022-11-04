@@ -24,7 +24,7 @@ use chat::*;
 use music::*;
 
 #[group]
-#[commands(ping, play, stop, author, clear)]
+#[commands(ping, play, skip, stop, author, clear)]
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
@@ -34,8 +34,7 @@ struct Handler;
 
 #[async_trait]
 impl serenity::client::EventHandler for Handler {
-    async fn message(&self, ctx: Context, new_message: Message) {
-    }
+    async fn message(&self, ctx: Context, new_message: Message) {}
 }
 
 #[tokio::main]
