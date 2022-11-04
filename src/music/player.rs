@@ -108,16 +108,16 @@ pub async fn play(
 ) -> PlayerResult<MediaInfo> {
     let guild_id = guild.id;
 
-    let channel_id = guild
+    let voice_channel_id = guild
         .voice_states
         .get(&author.id)
         .and_then(|voice_state| voice_state.channel_id);
 
-    if channel_id.is_none() {
+    if voice_channel_id.is_none() {
         return Err(PlayerError::UserOffVoiceChannel);
     }
 
-    let connect_to = channel_id.unwrap();
+    let connect_to = voice_channel_id.unwrap();
 
     let manager = songbird::get(&ctx)
         .await
@@ -153,7 +153,7 @@ pub async fn play(
             songbird::Event::Track(TrackEvent::End),
             StopMusicHandle {
                 ctx: ctx.clone(),
-                channel_id: channel_id.unwrap().0,
+                channel_id: channel.id().0,
                 guild_id: guild_id.0,
             },
         )

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use chrono::Duration;
+use chrono::{format, Duration};
 use serde_json::Value;
 use serenity::model::prelude::{Channel, ChannelId};
 use serenity::prelude::Context;
@@ -27,18 +27,21 @@ impl<'fut> EventHandler for StopMusicHandle {
     async fn act(&self, _ctx: &songbird::EventContext<'_>) -> Option<songbird::Event> {
         let playing_next = play_next(&self.ctx, self.guild_id, self.channel_id).await;
 
-        let mut builder = EditMessage::default();
-        
-        builder.content("Não há mais nenhuma música na playlist.");
-
-        let map = hashmap_to_json_map(builder.0);
-
-        if !playing_next {
-            self.ctx.http.send_message(
-                self.channel_id,
-                &Value::from(map),
-            );
+        if playing_next {
+            return None;
         }
+
+        let message = self.ctx
+            .http
+            .get_channel(self.channel_id)
+            .await
+            .unwrap()
+            .id()
+            .send_message(&self.ctx.http, |m| {
+                m.content("Não há mais nenhuma música na playlist.")
+            })
+            .await
+            .unwrap();
 
         None
     }

@@ -1,7 +1,14 @@
 use std::sync::Arc;
 
 use lazy_static::lazy_static;
-use serenity::{futures::lock::Mutex, prelude::Context, model::{prelude::{Guild, Channel}, user::User}};
+use serenity::{
+    futures::lock::Mutex,
+    model::{
+        prelude::{Channel, Guild},
+        user::User,
+    },
+    prelude::Context,
+};
 use songbird::input::Input;
 
 type PlaylistResult<T> = Result<T, PlaylistError>;
