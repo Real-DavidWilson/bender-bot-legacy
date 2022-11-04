@@ -4,7 +4,7 @@ Este é um bot para o discord escrito em rust.
 
 ### Instruções
 
-Para executar o bot instale as dependências a seguir.
+Para executar o bot instale as dependências e configure o ambiente com as instruções a seguir.
 
 #### Instale o Rust
 
