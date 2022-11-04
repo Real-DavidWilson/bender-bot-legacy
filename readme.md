@@ -10,7 +10,7 @@ Para executar o bot instale as dependências a seguir.
 
 https://www.rust-lang.org/pt-BR/tools/install
 
-#### Instale o FFMpeg Cli
+#### Instale o FFmpeg Cli
 
 https://ffmpeg.org/download.html
 
