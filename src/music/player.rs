@@ -144,7 +144,12 @@ pub async fn play(
 
     let duration = format_duration(video_duration);
 
-    handler.stop();
+    let has_connection = handler.current_connection().is_some();
+
+    if has_connection {
+        handler.stop();
+    }
+
     let track_handle = handler.play_only_source(source);
     handler.deafen(true).await.unwrap();
 
