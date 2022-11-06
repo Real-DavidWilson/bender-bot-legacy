@@ -5,8 +5,9 @@ extern crate dotenv_codegen;
 extern crate chrono;
 extern crate redis;
 
+use std::ops::Sub;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serenity::async_trait;
 use serenity::client::{Client, Context};
@@ -22,6 +23,7 @@ mod chat;
 mod music;
 use chat::*;
 use music::*;
+use tracing_subscriber::fmt::format;
 
 #[group]
 #[commands(ping, play, skip, stop, author, clear)]
@@ -55,32 +57,10 @@ async fn main() {
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    let package_lengh = 15;
-    let mut latencies: Vec<u128> = Vec::new();
-    let mut base_msg = msg.reply(&ctx, "Checando conectividade").await.unwrap();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+    let latency = msg.timestamp.timestamp_millis();
 
-    for i in 0..package_lengh {
-        let start = Instant::now();
-        base_msg
-            .edit(&ctx, |m| {
-                m.content(format!("Enviando pacotes... {}/{}", i + 1, package_lengh))
-            })
-            .await
-            .unwrap();
-        let elapsed = start.elapsed();
-
-        latencies.push(elapsed.as_millis());
-
-        thread::sleep(Duration::from_millis(1000));
-    }
-
-    let sum = latencies.iter().fold(0, |s, val| s + val);
-    let final_latency = sum / latencies.len() as u128;
-
-    base_msg
-        .edit(&ctx, |m| m.content(format!("Ping {}ms", final_latency)))
-        .await
-        .unwrap();
+    msg.reply(&ctx.http, format!("Ping {}ms", now - latency as u128)).await.unwrap();
 
     Ok(())
 }
