@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use chrono::{naive, Timelike};
 use lazy_static::lazy_static;
 use serde_json::Value;
 use serenity::{
@@ -11,7 +12,7 @@ use serenity::{
         prelude::{Channel, Embed, Guild, GuildId},
         user::User,
     },
-    prelude::Context,
+    prelude::{ClientError, Context},
     utils::{hashmap_to_json_map, CustomMessage, MessageBuilder},
 };
 use songbird::{input::Input, EventHandler, Songbird, TrackEvent};
@@ -57,6 +58,10 @@ fn format_duration(duration: Duration) -> String {
         (duration.as_secs() as u32 / 60) % 60,
         duration.as_secs() as u32 % 60,
     );
+
+    if naive_duration.hour() > 0 {
+        return format!("{}", naive_duration.format("%H:%M:%S").to_string());
+    }
 
     format!("{}", naive_duration.format("%M:%S").to_string())
 }
@@ -106,6 +111,14 @@ pub async fn play(
     channel: Channel,
     author: User,
 ) -> PlayerResult<MediaInfo> {
+    let my_option: Option<i32> = Some(123);
+
+    let Some(my_value) = my_option else {
+        return Err(PlayerError::MusicNotFound)
+    };
+
+    println!("VALOR {}", my_value);
+
     let guild_id = guild.id;
 
     let voice_channel_id = guild
