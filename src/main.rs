@@ -5,10 +5,12 @@ extern crate dotenv_codegen;
 extern crate chrono;
 extern crate redis;
 
-use std::ops::Sub;
+use std::ops::{Sub, SubAssign};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use chrono::TimeZone;
+use chrono_tz::Tz;
 use serenity::async_trait;
 use serenity::client::{Client, Context};
 use serenity::framework::standard::{
@@ -23,6 +25,7 @@ mod chat;
 mod music;
 use chat::*;
 use music::*;
+use songbird::packet::pnet::types::u1;
 use tracing_subscriber::fmt::format;
 
 #[group]
@@ -40,7 +43,7 @@ impl serenity::client::EventHandler for Handler {}
 #[tokio::main]
 async fn main() {
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("~"))
+        .configure(|c| c.prefix("."))
         .group(&GENERAL_GROUP);
 
     let mut client = Client::builder(TOKEN)
@@ -57,17 +60,11 @@ async fn main() {
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    let latency = msg.timestamp.timestamp_millis();
+    let msg_timestamp = msg.timestamp.naive_utc().timestamp_millis();
+    let now = chrono::Local::now().naive_utc().timestamp_millis();
+    let latency = now.sub(msg_timestamp);
 
-    msg.reply(&ctx.http, format!("Ping {}ms", now - latency as u128)).await.unwrap();
-
-    Ok(())
-}
-
-#[command]
-async fn author(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(&ctx, "David Wilson - davidwilsonbr2019@gmail.com")
+    msg.reply(&ctx.http, format!("Ping {}ms", latency))
         .await
         .unwrap();
 
