@@ -10,7 +10,6 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use chrono::TimeZone;
-use chrono_tz::Tz;
 use serenity::async_trait;
 use serenity::client::{Client, Context};
 use serenity::framework::standard::{
@@ -29,7 +28,7 @@ use songbird::packet::pnet::types::u1;
 use tracing_subscriber::fmt::format;
 
 #[group]
-#[commands(ping, play, skip, stop, author, clear)]
+#[commands(ping, play, skip, stop, clear)]
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
