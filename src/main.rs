@@ -48,6 +48,7 @@ async fn main() {
         .configure(|c| c.prefix("."))
         .unrecognised_command(unknown_command)
         .group(&GENERAL_GROUP)
+        .group(&CHAT_GROUP)
         .group(&MUSIC_GROUP)
         .group(&NETWORK_GROUP);
 
