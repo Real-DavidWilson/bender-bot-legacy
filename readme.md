@@ -1,6 +1,6 @@
 ## Bender Bot
 
-Este é um bot gerenciar o seu servidor do discord, contendo uma rádio embutida. 
+Bender é um bot de código aberto feito para gerenciar servidores do Discord. O bot ainda está em processo de desenvolvimento, portanto seu uso é instável.
 
 ### Instruções
 
