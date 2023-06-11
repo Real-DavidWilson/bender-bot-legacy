@@ -37,11 +37,6 @@ struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
 
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {}
-
 #[hook]
 async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_name: &str) {
     println!("Could not find command named '{}'", unknown_command_name);
@@ -63,7 +58,6 @@ async fn main() {
         | GatewayIntents::GUILD_MESSAGES;
 
     let mut client = Client::builder(TOKEN, intents)
-        .event_handler(Handler)
         .register_songbird()
         .framework(framework)
         .await
