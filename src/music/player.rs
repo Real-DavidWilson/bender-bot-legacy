@@ -73,6 +73,7 @@ pub async fn queue<'a>(
     channel: Channel,
     author: User,
 ) -> PlayerResult<PlayerStatus> {
+    println!("URI {}", uri.clone());
     let source = query_video(uri.clone()).await;
 
     if source.is_err() {
@@ -111,12 +112,6 @@ pub async fn play(
     channel: Channel,
     author: User,
 ) -> PlayerResult<MediaInfo> {
-    let my_option: Option<i32> = Some(123);
-
-    let Some(my_value) = my_option else {
-        return Err(PlayerError::MusicNotFound)
-    };
-
     let guild_id = guild.id;
 
     let voice_channel_id = guild
