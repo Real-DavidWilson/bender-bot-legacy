@@ -1,11 +1,18 @@
 use serde_json::json;
 use serenity::{
     client::Context,
-    framework::standard::{macros::command, Args, CommandError, CommandResult},
+    framework::standard::{
+        macros::{command, group},
+        Args, CommandError, CommandResult,
+    },
     model::channel::Message,
     prelude::Mentionable,
     utils::MessageBuilder,
 };
+
+#[group]
+#[commands(clear)]
+pub struct Chat;
 
 #[command]
 #[only_in(guilds)]
@@ -66,14 +73,15 @@ pub async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 
     let map = json!({ "messages": messages_ids });
 
-    let res = ctx.http
-        .delete_messages(msg.channel_id.0, &map)
-        .await;
+    let res = ctx.http.delete_messages(msg.channel_id.0, &map).await;
 
     if res.is_err() {
-        msg.reply(&ctx.http, "Não foi possível deletar as mensagens desse canal.")
-            .await
-            .unwrap();
+        msg.reply(
+            &ctx.http,
+            "Não foi possível deletar as mensagens desse canal.",
+        )
+        .await
+        .unwrap();
 
         return Err(CommandError::from("Ocorreu um erro."));
     }

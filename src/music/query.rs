@@ -12,7 +12,6 @@ pub async fn query_video(uri: String) -> QueryResult<Input> {
         let source = songbird::ytdl(format!("ytsearch1:{}", uri)).await;
 
         if source.is_err() {
-            println!("{:?}", source);
             return Err(QueryError::NotFound);
         }
 

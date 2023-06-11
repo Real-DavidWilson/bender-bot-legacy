@@ -13,7 +13,7 @@ use serenity::{
         user::User,
     },
     prelude::{ClientError, Context},
-    utils::{hashmap_to_json_map, CustomMessage, MessageBuilder},
+    utils::{CustomMessage, MessageBuilder},
 };
 use songbird::{input::Input, EventHandler, Songbird, TrackEvent};
 
@@ -116,8 +116,6 @@ pub async fn play(
     let Some(my_value) = my_option else {
         return Err(PlayerError::MusicNotFound)
     };
-
-    println!("VALOR {}", my_value);
 
     let guild_id = guild.id;
 

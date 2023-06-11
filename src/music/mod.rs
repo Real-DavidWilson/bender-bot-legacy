@@ -7,7 +7,7 @@ use serenity::{
     async_trait,
     builder::{CreateMessage, EditMessage},
     client::Context,
-    framework::standard::{macros::command, Args, CommandResult},
+    framework::standard::{macros::{command, group}, Args, CommandResult},
     futures::lock::Mutex,
     http::CacheHttp,
     model::{
@@ -16,8 +16,8 @@ use serenity::{
         prelude::{Channel, ChannelId},
         user::User,
     },
-    utils::{hashmap_to_json_map, Color, MessageBuilder},
-    FutureExt,
+    utils::{Color, MessageBuilder},
+    FutureExt, json::hashmap_to_json_map,
 };
 use songbird::input::Input;
 use songbird::{EventHandler, Songbird, TrackEvent};
@@ -30,6 +30,10 @@ pub mod query;
 use player::{PlayerError, PlayerStatus};
 
 use self::player::MediaInfo;
+
+#[group]
+#[commands(play, skip, stop)]
+struct Music;
 
 pub async fn send_media_message(
     ctx: &Context,
@@ -65,8 +69,8 @@ pub async fn send_media_message(
 #[command]
 #[only_in(guilds)]
 pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let guild = msg.guild(&ctx.cache).await.unwrap();
-    let channel = msg.channel(&ctx.cache).await.unwrap();
+    let guild = msg.guild(&ctx.cache).unwrap();
+    let channel = msg.channel(&ctx.http).await.unwrap();
 
     let status = player::queue(
         ctx.clone(),
@@ -112,11 +116,13 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[only_in(guilds)]
 pub async fn skip(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     let playing_next = player::skip(&ctx, msg.guild_id.unwrap().0, msg.channel_id.0).await;
-    
+
     if !playing_next {
-        msg.reply(&ctx.http, "Não há mais nenhuma música na playlist.").await.unwrap();
+        msg.reply(&ctx.http, "Não há mais nenhuma música na playlist.")
+            .await
+            .unwrap();
     }
-    
+
     Ok(())
 }
 

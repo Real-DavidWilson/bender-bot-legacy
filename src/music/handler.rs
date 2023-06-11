@@ -6,9 +6,7 @@ use serde_json::Value;
 use serenity::model::prelude::{Channel, ChannelId};
 use serenity::prelude::Context;
 use serenity::utils::MessageBuilder;
-use serenity::{
-    async_trait, builder::EditMessage, model::prelude::GuildId, utils::hashmap_to_json_map,
-};
+use serenity::{async_trait, builder::EditMessage, model::prelude::GuildId};
 use songbird::{EventHandler, Songbird};
 
 use super::player::{self, play_next};

@@ -12,60 +12,64 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use chrono::TimeZone;
 use serenity::async_trait;
 use serenity::client::{Client, Context};
+use serenity::framework::standard::macros::hook;
 use serenity::framework::standard::{
     macros::{command, group},
     CommandResult, StandardFramework,
 };
-use serenity::model::channel::Message;
-use serenity::model::prelude::ReactionType;
+use serenity::model::prelude::Message;
+use serenity::prelude::{EventHandler, GatewayIntents};
+use songbird::packet::pnet::types::u1;
 use songbird::SerenityInit;
+use tracing_subscriber::fmt::format;
+
+use chat::*;
+use music::*;
+use network::*;
 
 mod chat;
 mod music;
-use chat::*;
-use music::*;
-use songbird::packet::pnet::types::u1;
-use tracing_subscriber::fmt::format;
+mod network;
 
 #[group]
-#[commands(ping, play, skip, stop, clear)]
+#[commands(ping)]
 struct General;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
-// static mut REDIS_CONN: Option<redis::Connection> = None;
 
 struct Handler;
 
 #[async_trait]
-impl serenity::client::EventHandler for Handler {}
+impl EventHandler for Handler {}
+
+#[hook]
+async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_name: &str) {
+    println!("Could not find command named '{}'", unknown_command_name);
+}
 
 #[tokio::main]
 async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("."))
-        .group(&GENERAL_GROUP);
+        .unrecognised_command(unknown_command)
+        .group(&GENERAL_GROUP)
+        .group(&MUSIC_GROUP)
+        .group(&NETWORK_GROUP);
 
-    let mut client = Client::builder(TOKEN)
+    let intents = GatewayIntents::non_privileged()
+        | GatewayIntents::GUILDS
+        | GatewayIntents::MESSAGE_CONTENT
+        | GatewayIntents::DIRECT_MESSAGES
+        | GatewayIntents::GUILD_MESSAGES;
+
+    let mut client = Client::builder(TOKEN, intents)
         .event_handler(Handler)
-        .framework(framework)
         .register_songbird()
+        .framework(framework)
         .await
         .expect("Error creating client");
 
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
     }
-}
-
-#[command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    let msg_timestamp = msg.timestamp.naive_utc().timestamp_millis();
-    let now = chrono::Local::now().naive_utc().timestamp_millis();
-    let latency = now.sub(msg_timestamp);
-
-    msg.reply(&ctx.http, format!("Ping {}ms", latency))
-        .await
-        .unwrap();
-
-    Ok(())
 }
