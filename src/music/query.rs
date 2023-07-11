@@ -1,3 +1,6 @@
+use std::process::{Command, Stdio};
+
+use serde::de::Error;
 use songbird::input::Input;
 
 type QueryResult<T> = Result<T, QueryError>;

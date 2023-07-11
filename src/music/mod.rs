@@ -7,9 +7,13 @@ use serenity::{
     async_trait,
     builder::{CreateMessage, EditMessage},
     client::Context,
-    framework::standard::{macros::{command, group}, Args, CommandResult},
+    framework::standard::{
+        macros::{command, group},
+        Args, CommandResult,
+    },
     futures::lock::Mutex,
     http::CacheHttp,
+    json::hashmap_to_json_map,
     model::{
         channel::Message,
         id::GuildId,
@@ -17,7 +21,7 @@ use serenity::{
         user::User,
     },
     utils::{Color, MessageBuilder},
-    FutureExt, json::hashmap_to_json_map,
+    FutureExt,
 };
 use songbird::input::Input;
 use songbird::{EventHandler, Songbird, TrackEvent};
@@ -32,7 +36,7 @@ use player::{PlayerError, PlayerStatus};
 use self::player::MediaInfo;
 
 #[group]
-#[commands(play, skip, stop)]
+#[commands(play, skip, stop, playlist)]
 struct Music;
 
 pub async fn send_media_message(
@@ -45,16 +49,16 @@ pub async fn send_media_message(
 
     msg.embed(|e| {
         e.image(media_info.thumb)
-            .color(0xffffff)
+            .color(0xc3e2e1)
             .author(|a| {
                 a.name(author.name.clone())
                     .icon_url(author.avatar_url().unwrap())
             })
             .thumbnail(
-                "https://www.wdentalstudio.com/wp-content/uploads/2021/08/headphones2.gif"
+                "https://cdn.icon-icons.com/icons2/1429/PNG/512/icon-robots-16_98547.png"
                     .to_string(),
             )
-            .description("Radiolão do bender.")
+            .description("Rádio do Bender.")
             .field("Artista", media_info.artist, false)
             .field("Tocando", media_info.title, false)
             .field("Duração", media_info.duration, false)
@@ -94,22 +98,72 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                     .unwrap();
             }
         }
+
+        return Ok(());
     }
 
-    if status.is_ok() {
-        match status.unwrap() {
-            PlayerStatus::Queued => {
-                msg.reply(&ctx.http, "A sua música foi adicionada na playlist.")
-                    .await
-                    .unwrap();
-            }
-            PlayerStatus::Playing(media_info) => {
-                send_media_message(&ctx, &msg.author, msg.channel_id.0, media_info).await;
-            }
+    match status.as_ref().unwrap() {
+        PlayerStatus::Queued => {
+            msg.reply(&ctx.http, "A sua música foi adicionada na playlist.")
+                .await
+                .unwrap();
+        }
+        PlayerStatus::Playing(media_info) => {
+            send_media_message(&ctx, &msg.author, msg.channel_id.0, media_info.to_owned()).await;
         }
     }
 
-    Ok(())
+    return Ok(());
+}
+
+#[command]
+#[only_in(guilds)]
+pub async fn playlist(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    let page = args.parse::<usize>().unwrap_or(1);
+    let guild_id = msg.guild(&ctx.cache).unwrap().id.0;
+    let channel_id = msg.channel_id.0;
+
+    let playlist_info = playlist::info(guild_id, page, 3).await;
+
+    if playlist_info.is_none() {
+        return Ok(());
+    }
+
+    let playlist_info = playlist_info.unwrap();
+
+    let mut items_str = String::new();
+
+    for (i, item_info) in playlist_info.items.iter().enumerate() {
+        if i > 0 {
+            items_str.push_str("\n");
+        }
+
+        let index = item_info.index + 1;
+        let title = item_info.media_info.title.clone();
+        let artist = item_info.media_info.artist.clone();
+
+        items_str.push_str(format!("`{index}° - {title} | {artist}`").as_str());
+    }
+
+    let mut msg_build = CreateMessage::default();
+
+    msg_build.embed(|e| {
+        e.author(|a| {
+            a.name(msg.author.name.clone())
+                .icon_url(msg.author.avatar_url().unwrap())
+        })
+        .description("Playlist")
+        .field("Musgas", playlist_info.total_tracks, true)
+        .field("Paginas", playlist_info.total_pages, true)
+        .field("Musga de homi", items_str, false)
+        .footer(|f| f.text("Bora beber pinga"))
+    });
+
+    let map = hashmap_to_json_map(msg_build.0);
+
+    ctx.http.send_message(channel_id, &Value::Object(map)).await;
+
+    return Ok(());
 }
 
 #[command]
@@ -129,5 +183,9 @@ pub async fn skip(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[command]
 #[only_in(guilds)]
 pub async fn stop(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
+    let guild_id = msg.guild_id.unwrap().0;
+
+    player::stop(ctx, guild_id).await;
+
     Ok(())
 }

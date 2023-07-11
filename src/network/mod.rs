@@ -5,7 +5,7 @@ use serenity::{
         macros::{command, group},
         CommandResult,
     },
-    model::prelude::Message,
+    model::{prelude::Message, Timestamp},
     prelude::Context,
 };
 
@@ -17,12 +17,12 @@ pub struct Network;
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
+    let mut now = Timestamp::now().naive_utc().timestamp_millis();
     let msg_timestamp = msg.timestamp.naive_utc().timestamp_millis();
-    let now = Local::now().naive_utc().timestamp_millis();
 
-    let latency = now.sub(msg_timestamp);
+    let latency = msg_timestamp - now;
 
-    msg.reply(&ctx.http, format!("Ping {}ms", latency))
+    msg.reply(&ctx.http, format!("Ping {latency}ms"))
         .await
         .unwrap();
 

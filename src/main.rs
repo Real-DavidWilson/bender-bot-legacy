@@ -23,34 +23,40 @@ use songbird::packet::pnet::types::u1;
 use songbird::SerenityInit;
 use tracing_subscriber::fmt::format;
 
+use backup::*;
 use chat::*;
 use music::*;
 use network::*;
+use status::*;
 
+mod backup;
 mod chat;
 mod music;
 mod network;
-
-#[group]
-#[commands(ping)]
-struct General;
+mod status;
 
 const TOKEN: &'static str = dotenv!("TOKEN");
 
 #[hook]
-async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_name: &str) {
-    println!("Could not find command named '{}'", unknown_command_name);
+async fn unknown_command(ctx: &Context, msg: &Message, unknown_command_name: &str) {
+    msg.reply(
+        &ctx.http,
+        "Não conheço este comando, tem certeza de que existe?",
+    )
+    .await
+    .unwrap();
 }
 
 #[tokio::main]
 async fn main() {
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("."))
+        .configure(|c| c.prefix("!"))
         .unrecognised_command(unknown_command)
-        .group(&GENERAL_GROUP)
         .group(&CHAT_GROUP)
         .group(&MUSIC_GROUP)
-        .group(&NETWORK_GROUP);
+        .group(&NETWORK_GROUP)
+        .group(&BACKUP_GROUP)
+        .group(&STATUS_GROUP);
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::GUILDS

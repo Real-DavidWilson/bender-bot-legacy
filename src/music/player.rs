@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use chrono::{naive, Timelike};
 use lazy_static::lazy_static;
@@ -27,7 +27,7 @@ use super::{
 type PlayerResult<T> = Result<T, PlayerError>;
 
 lazy_static! {
-    pub static ref IS_PLAYING: Mutex<bool> = Mutex::new(false);
+    pub static ref IS_PLAYING: Mutex<HashMap<u64, bool>> = Mutex::new(HashMap::new());
 }
 
 #[derive(Debug, Clone)]
@@ -47,12 +47,18 @@ pub struct MediaInfo {
     pub title: String,
     pub thumb: String,
     pub artist: String,
-    pub video_duration: Duration,
+    pub video_duration: Option<Duration>,
     pub url: String,
     pub duration: String,
 }
 
-fn format_duration(duration: Duration) -> String {
+pub fn format_duration(duration: Option<Duration>) -> String {
+    if duration.is_none() {
+        return String::from("Ao Vivo")
+    }
+
+    let duration = duration.unwrap();
+
     let naive_duration = chrono::naive::NaiveTime::from_hms(
         (duration.as_secs() as u32 / 60) / 60,
         (duration.as_secs() as u32 / 60) % 60,
@@ -73,8 +79,8 @@ pub async fn queue<'a>(
     channel: Channel,
     author: User,
 ) -> PlayerResult<PlayerStatus> {
-    println!("URI {}", uri.clone());
     let source = query_video(uri.clone()).await;
+    let guild_id = guild.id.0;
 
     if source.is_err() {
         return Err(PlayerError::MusicNotFound);
@@ -82,15 +88,18 @@ pub async fn queue<'a>(
 
     let source = source.unwrap();
 
-    if *IS_PLAYING.lock().await {
-        playlist::insert(playlist::PlaylistItem {
-            ctx: ctx.clone(),
-            uri: uri.clone(),
-            guild,
-            channel,
-            author,
-            source,
-        })
+    if *IS_PLAYING.lock().await.get(&guild.id.0).unwrap_or(&false) {
+        playlist::insert(
+            guild.id.0,
+            playlist::PlaylistItem {
+                ctx: ctx.clone(),
+                uri: uri.clone(),
+                guild,
+                channel,
+                author,
+                source,
+            },
+        )
         .await
         .unwrap();
 
@@ -99,8 +108,7 @@ pub async fn queue<'a>(
 
     let media_info = play(&ctx, source, guild, channel, author).await?;
 
-    let mut is_playing = IS_PLAYING.lock().await;
-    *is_playing = true;
+    IS_PLAYING.lock().await.insert(guild_id, true);
 
     Ok(PlayerStatus::Playing(media_info))
 }
@@ -127,7 +135,7 @@ pub async fn play(
 
     let manager = songbird::get(&ctx)
         .await
-        .expect("Songbird Voice client placed in at initialisation.")
+        .expect("Songbird Voice client placed in at initialization.")
         .clone();
 
     let _ = manager.join(guild_id, connect_to).await;
@@ -145,10 +153,10 @@ pub async fn play(
     let title = metadata.title.unwrap();
     let thumb = metadata.thumbnail.unwrap();
     let artist = metadata.artist.unwrap();
-    let video_duration = metadata.duration.unwrap();
+    let video_duration = metadata.duration;
     let url = metadata.source_url.unwrap();
 
-    let duration = format_duration(video_duration);
+    let duration = format_duration(metadata.duration);
 
     let has_connection = handler.current_connection().is_some();
 
@@ -156,7 +164,7 @@ pub async fn play(
         handler.stop();
     }
 
-    let track_handle = handler.play_only_source(source);
+    let track_handle = handler.play_source(source);
     handler.deafen(true).await.unwrap();
 
     track_handle
@@ -182,11 +190,10 @@ pub async fn play(
 
 pub async fn play_next(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
     let manager = songbird::get(&ctx).await.unwrap();
-    let next_music = playlist::next().await;
+    let next_music = playlist::next(guild_id).await;
 
     if next_music.is_none() {
-        let mut is_playing = IS_PLAYING.lock().await;
-        *is_playing = false;
+        IS_PLAYING.lock().await.insert(guild_id, false);
 
         let handler_lock = manager.get(guild_id);
 
@@ -231,4 +238,23 @@ pub async fn skip(ctx: &Context, guild_id: u64, channel_id: u64) -> bool {
     play_next(&ctx, guild_id, channel_id).await
 }
 
-pub async fn stop() {}
+pub async fn stop(ctx: &Context, guild_id: u64) {
+    let manager = songbird::get(&ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+
+    let handler_lock = manager.get(guild_id);
+
+    if handler_lock.is_none() {
+        return;
+    }
+
+    let mut handler = handler_lock.as_ref().unwrap().lock().await;
+
+    handler.stop();
+    handler.leave().await.unwrap();
+
+    playlist::reset(guild_id).await;
+    IS_PLAYING.lock().await.insert(guild_id, false);
+}
