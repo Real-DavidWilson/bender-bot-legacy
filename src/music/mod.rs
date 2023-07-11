@@ -86,6 +86,14 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     .await;
 
     match status {
+        Ok(PlayerStatus::Queued) => {
+            msg.reply(&ctx.http, "A sua música foi adicionada na playlist.")
+                .await
+                .unwrap();
+        }
+        Ok(PlayerStatus::Playing(media_info)) => {
+            send_media_message(&ctx, &msg.author, msg.channel_id.0, media_info.to_owned()).await;
+        }
         Err(PlayerError::MusicNotFound) => {
             msg.reply(&ctx.http, "Musica não encontrada.")
                 .await
@@ -97,21 +105,6 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                 .unwrap();
         }
         _ => {}
-    }
-
-    if status.is_err() {
-        return Ok(());
-    }
-
-    match status.as_ref().unwrap() {
-        PlayerStatus::Queued => {
-            msg.reply(&ctx.http, "A sua música foi adicionada na playlist.")
-                .await
-                .unwrap();
-        }
-        PlayerStatus::Playing(media_info) => {
-            send_media_message(&ctx, &msg.author, msg.channel_id.0, media_info.to_owned()).await;
-        }
     }
 
     return Ok(());
