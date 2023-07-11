@@ -85,20 +85,21 @@ pub async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     )
     .await;
 
-    if status.is_err() {
-        match status.as_ref().unwrap_err() {
-            PlayerError::MusicNotFound => {
-                msg.reply(&ctx.http, "Musica não encontrada.")
-                    .await
-                    .unwrap();
-            }
-            PlayerError::UserOffVoiceChannel => {
-                msg.reply(&ctx.http, "Você precisa estar em um canal de voz.")
-                    .await
-                    .unwrap();
-            }
+    match status {
+        Err(PlayerError::MusicNotFound) => {
+            msg.reply(&ctx.http, "Musica não encontrada.")
+                .await
+                .unwrap();
         }
+        Err(PlayerError::UserOffVoiceChannel) => {
+            msg.reply(&ctx.http, "Você precisa estar em um canal de voz.")
+                .await
+                .unwrap();
+        }
+        _ => {}
+    }
 
+    if status.is_err() {
         return Ok(());
     }
 
