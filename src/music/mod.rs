@@ -87,7 +87,7 @@ pub async fn send_media_message(
             .field("Duração", duration, true)
             .field("Data", date, true)
             .field("", "", false)
-        // .field("URL", url, false)
+            .field("URL", url, false)
     });
 
     let map = hashmap_to_json_map(msg.0);
