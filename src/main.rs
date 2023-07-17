@@ -41,7 +41,7 @@ mod music;
 mod network;
 mod status;
 
-const TOKEN: &'static str = dotenv!("TOKEN");
+const TOKEN: &'static str = dotenv!("DISCORD_TOKEN");
 
 #[hook]
 async fn unknown_command(ctx: &Context, msg: &Message, unknown_command_name: &str) {
