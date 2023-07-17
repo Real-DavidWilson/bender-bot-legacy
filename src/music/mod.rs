@@ -40,20 +40,6 @@ use self::player::{format_duration, MediaInfo};
 #[commands(play, pause, unpause, trackinfo, volume, skip, stop, playlist)]
 struct Music;
 
-macro_rules! send_embed {
-    ($ctx:expr, $channel_id:expr, $embed:expr) => {{
-        let mut msg = CreateMessage::default();
-
-        msg.embed($embed);
-
-        let map = hashmap_to_json_map(msg.0);
-
-        $ctx.http
-            .send_message($channel_id.0, &Value::Object(map))
-            .await;
-    }};
-}
-
 pub async fn send_media_message(
     ctx: &Context,
     member: &Member,
@@ -109,11 +95,6 @@ pub async fn send_media_message(
     ctx.http
         .send_message(channel_id.0, &Value::Object(map))
         .await;
-
-    send_embed!(ctx, channel_id, |e| {
-        e.field("DALILA 1", "ABC", false)
-            .field("DALILA 2", "ABC", false)
-    });
 }
 
 #[command]
