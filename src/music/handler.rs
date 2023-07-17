@@ -9,27 +9,27 @@ use serenity::utils::MessageBuilder;
 use serenity::{async_trait, builder::EditMessage, model::prelude::GuildId};
 use songbird::{EventHandler, Songbird};
 
-use super::player::{self, play_next};
+use super::player::{self, next};
 use super::playlist;
 
 use super::send_media_message;
 
 pub struct StopMusicHandle {
     pub ctx: Context,
-    pub guild_id: u64,
-    pub channel_id: u64,
+    pub guild_id: GuildId,
+    pub channel_id: ChannelId,
 }
 
 #[async_trait]
 impl<'fut> EventHandler for StopMusicHandle {
     async fn act(&self, _ctx: &songbird::EventContext<'_>) -> Option<songbird::Event> {
-        let playing_next = play_next(&self.ctx, self.guild_id, self.channel_id).await;
+        let playing_next = next(&self.ctx, self.guild_id.0, self.channel_id.0).await;
 
         if playing_next {
             return None;
         }
 
-        let channel = self.ctx.http.get_channel(self.channel_id).await.unwrap();
+        let channel = self.ctx.http.get_channel(self.channel_id.0).await.unwrap();
 
         channel
             .id()

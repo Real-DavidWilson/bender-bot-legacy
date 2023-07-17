@@ -16,6 +16,8 @@ dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
 lazy_static = "1.4.0"
 querystring = "1.1.0"
+humantime = "2.1"
+serenity-additions = "0.3.1"
 
 [dependencies.redis]
 git = "https://github.com/mitsuhiko/redis-rs.git"

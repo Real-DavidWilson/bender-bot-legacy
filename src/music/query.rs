@@ -11,15 +11,11 @@ pub enum QueryError {
 }
 
 pub async fn query_video(uri: String) -> QueryResult<Input> {
-    if !uri.starts_with("http") {
-        let source = songbird::ytdl(format!("ytsearch1:{}", uri)).await;
-
-        if source.is_err() {
-            return Err(QueryError::NotFound);
-        }
-
-        return Ok(source.unwrap());
-    }
+    let uri = if !uri.starts_with("http") {
+        format!("ytsearch1:{}", uri)
+    } else {
+        uri
+    };
 
     let source = songbird::ytdl(uri).await;
 

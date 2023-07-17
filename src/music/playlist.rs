@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use serenity::{
     futures::lock::{Mutex, MutexGuard},
     model::{
-        prelude::{Channel, Guild},
+        prelude::{Channel, ChannelId, Guild, GuildId, Member},
         user::User,
     },
     prelude::Context,
@@ -18,9 +18,9 @@ type PlaylistResult<T> = Result<T, PlaylistError>;
 pub struct PlaylistItem {
     pub ctx: Context,
     pub uri: String,
-    pub guild: Guild,
-    pub channel: Channel,
-    pub author: User,
+    pub guild_id: GuildId,
+    pub channel_id: ChannelId,
+    pub member: Member,
     pub source: Input,
 }
 
